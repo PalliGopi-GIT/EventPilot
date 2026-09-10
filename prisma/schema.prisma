@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String?
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  googleConnection GoogleConnection?
+  sources          Source[]
+  events           Event[]
+  forms            Form[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model GoogleConnection {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  googleEmail           String
+  encryptedAccessToken  String
+  accessTokenIv         String
+  accessTokenTag        String
+  encryptedRefreshToken String?
+  refreshTokenIv        String?
+  refreshTokenTag       String?
+  tokenExpiry           DateTime?
+  scopes                String    // comma-separated list of scopes
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("google_connections")
+}
+
+model Source {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    String    // image/png, application/pdf, text/plain, etc.
+  fileSize    Int
+  rawContent  String?   // Base64 or extracted text
+  extractedText String? // Text extracted from OCR or PDF
+  sourceType  String    // event_poster, schedule, document, raw_text
+  eventDetected Boolean @default(false)
+  confidence  Float     @default(0.0)
+  status      String    @default("PENDING") // PENDING, ANALYZED, FAILED
+  metadata    String?   // JSON metadata
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  events      Event[]
+
+  @@index([userId])
+  @@map("sources")
+}
+
+model Event {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceId              String?
+  source                Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  name                  String
+  date                  String?
+  time                  String?
+  venue                 String?
+  organizer             String?
+  description           String?
+  audience              String?
+  registrationRequired  Boolean   @default(false)
+  confidence            Float     @default(0.0)
+  rawAiOutput           String?   // Raw JSON from AI
+  status                String    @default("DRAFT") // DRAFT, REVIEWED, APPROVED
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  forms                 Form[]
+
+  @@index([userId])
+  @@index([sourceId])
+  @@map("events")
+}
+
+model Form {
+  id                  String         @id @default(cuid())
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId             String?
+  event               Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  title               String
+  description         String?
+  formType            String         @default("REGISTRATION") // REGISTRATION, FEEDBACK
+  questionsJson       String         // Serialized Question[] JSON
+  status              String         @default("DRAFT") // DRAFT, GENERATED, APPROVED, CREATING, CREATED, FAILED
+
+  // Action Planning & Approval
+  actionPlanJson      String?        // Serialized action plan
+  approvedAt          DateTime?
+  approvedBy          String?
+
+  // Idempotency
+  requestId           String?        @unique // Client-generated idempotency key
+
+  // Google Forms Integration
+  googleFormId        String?        @unique
+  googleFormUrl       String?        // Edit URL
+  googleResponderUri  String?        // Public submission URL
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  questions           FormQuestion[]
+  responses           Response[]
+  analysis            ResponseAnalysis?
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([requestId])
+  @@map("forms")
+}
+
+model FormQuestion {
+  id             String   @id @default(cuid())
+  formId         String
+  form           Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  questionIndex  Int
+  label          String
+  type           String   // short_answer, paragraph, multiple_choice, checkbox, dropdown, linear_scale
+  required       Boolean  @default(false)
+  optionsJson    String?  // JSON array of strings for multiple_choice, checkbox, dropdown
+  scaleMin       Int?     @default(1)
+  scaleMax       Int?     @default(5)
+  scaleLowLabel  String?
+  scaleHighLabel String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([formId])
+  @@map("form_questions")
+}
+
+model Response {
+  id                String   @id @default(cuid())
+  formId            String
+  form              Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  googleResponseId  String   @unique
+  respondentEmail   String?
+  answersJson       String   // JSON of questionId -> answer text / array
+  submittedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([formId])
+  @@index([googleResponseId])
+  @@map("responses")
+}
+
+model ResponseAnalysis {
+  id                    String   @id @default(cuid())
+  formId                String   @unique
+  form                  Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  totalResponses        Int      @default(0)
+  averageRating         Float?
+  topStrengthsJson      String?  // JSON string array
+  commonSuggestionsJson String?  // JSON string array
+  themesJson            String?  // JSON array of { theme, sentiment, count }
+  sentiment             String?  // POSITIVE, NEUTRAL, MIXED, NEGATIVE
+  recommendationsJson   String?  // JSON string array
+  rawAnalysisJson       String?  // Full JSON output from GLM
+  analyzedAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("response_analyses")
+}
+
+model IdempotencyRecord {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  action      String
+  userId      String
+  status      String   // IN_PROGRESS, COMPLETED, FAILED
+  resultJson  String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([key])
+  @@index([userId])
+  @@map("idempotency_records")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String   // SOURCE_UPLOAD, SOURCE_ANALYZE, EVENT_EXTRACT, FORM_GENERATE, FORM_MODIFY, FORM_APPROVE, GOOGLE_FORM_CREATE, RESPONSES_FETCH, RESPONSES_ANALYZE
+  resourceType String   // source, event, form, google_connection, response
+  resourceId   String?
+  detailsJson  String?  // Sanitized details (NO SECRETS)
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}

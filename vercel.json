@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run prisma:generate && npm run build",
+  "installCommand": "npm install",
+  "functions": {
+    "app/api/sources/analyze/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/forms/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/forms/modify/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/insights/[formId]/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/google/forms/create/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "regions": ["iad1"]
+}
