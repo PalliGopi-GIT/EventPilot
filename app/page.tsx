@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ArrowRight } from "lucide-react";
 
 function useTypewriter(text: string, speed = 38, startDelay = 600) {
   const [displayed, setDisplayed] = useState("");
@@ -36,22 +36,33 @@ function useTypewriter(text: string, speed = 38, startDelay = 600) {
   return { displayed, done };
 }
 
+const HEADLINE = "Understand the Need. Find the Right Help. Make an Impact";
+
 export default function LandingPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [pillsVisible, setPillsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { displayed, done } = useTypewriter(
-    "Glad you stopped in. Good taste tends to find us. Now, what are we building?",
-    38,
-    600
-  );
+  // Staged reveal: supporting copy and actions follow the headline
+  const [showDescription, setShowDescription] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
-  // Show pills 400ms after mount
+  const { displayed, done } = useTypewriter(HEADLINE, 30, 600);
+
   useEffect(() => {
-    const timer = setTimeout(() => setPillsVisible(true), 400);
-    return () => clearTimeout(timer);
+    if (!done) return;
+    setShowDescription(true);
+    const t = setTimeout(() => setShowActions(true), 300);
+    return () => clearTimeout(t);
+  }, [done]);
+
+  // Safety fallback: never leave actions hidden
+  useEffect(() => {
+    const fallback = setTimeout(() => {
+      setShowDescription(true);
+      setShowActions(true);
+    }, 5000);
+    return () => clearTimeout(fallback);
   }, []);
 
   // Mouse-scrub video control
@@ -111,6 +122,10 @@ export default function LandingPage() {
     }
   };
 
+  // Split the typed headline into its three sentences, one per line.
+  // New lines appear as they are typed.
+  const headlineLines = displayed.split(". ");
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background Video */}
@@ -128,16 +143,16 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-10 px-5 sm:px-8 py-4 sm:py-5">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Link
               href="/"
-              className="text-[21px] sm:text-[26px] tracking-tight text-black"
+              className="text-[21px] sm:text-[24px] tracking-tight text-black"
               style={{ fontFamily: "var(--font-heading)" }}
             >
               EventPilot®
             </Link>
             <span
-              className="text-[25px] sm:text-[30px] text-black select-none"
+              className="text-[25px] sm:text-[28px] text-black select-none"
               style={{ letterSpacing: "-0.02em" }}
             >
               ✳︎
@@ -145,21 +160,28 @@ export default function LandingPage() {
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-1 text-[23px] text-black">
-            <Link href="/workspace" className="hover:opacity-60 transition-opacity">Workspace</Link>
-            <span>,</span>
-            <Link href="/dashboard" className="hover:opacity-60 transition-opacity ml-1">Dashboard</Link>
-            <span>,</span>
-            <Link href="/approval" className="hover:opacity-60 transition-opacity ml-1">Security</Link>
+          <div className="hidden md:flex items-center gap-7 text-[15px] text-black/70">
+            <Link href="/workspace" className="hover:text-black transition-colors">Workspace</Link>
+            <Link href="/dashboard" className="hover:text-black transition-colors">Dashboard</Link>
+            <Link href="/approval" className="hover:text-black transition-colors">Security</Link>
           </div>
 
-          {/* Desktop CTA */}
-          <Link
-            href="/workspace"
-            className="hidden md:block text-[23px] text-black underline underline-offset-2 hover:opacity-60 transition-opacity"
-          >
-            Start building
-          </Link>
+          {/* Desktop Auth */}
+          <div className="hidden md:flex items-center gap-5">
+            <Link
+              href="/login"
+              className="text-[15px] text-black/70 hover:text-black transition-colors"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/workspace"
+              className="bg-black text-white text-sm font-medium rounded-full px-5 py-2.5 hover:bg-slate-800 transition-colors"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Start building
+            </Link>
+          </div>
 
           {/* Mobile Hamburger */}
           <button
@@ -188,7 +210,7 @@ export default function LandingPage() {
 
       {/* Mobile Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-[9] bg-white/95 backdrop-blur-sm flex flex-col justify-center px-8 gap-8 transition-opacity duration-300 ${
+        className={`md:hidden fixed inset-0 z-[9] bg-white/95 backdrop-blur-sm flex flex-col justify-center px-8 gap-7 transition-opacity duration-300 ${
           isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -214,8 +236,15 @@ export default function LandingPage() {
           Security
         </Link>
         <Link
+          href="/login"
+          className="text-[24px] font-medium text-black/60"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Log in
+        </Link>
+        <Link
           href="/workspace"
-          className="text-[32px] font-medium text-black underline underline-offset-2"
+          className="text-[32px] font-medium text-black underline underline-offset-4"
           onClick={() => setIsMobileMenuOpen(false)}
         >
           Start building
@@ -223,17 +252,18 @@ export default function LandingPage() {
       </div>
 
       {/* Hero Section */}
-      <main className="h-screen flex flex-col justify-end md:justify-center pb-12 md:pb-0 px-5 sm:px-8 md:px-10 overflow-hidden relative z-[1]">
-        <div className="max-w-xl relative z-10">
+      <main className="h-screen flex flex-col justify-center px-5 sm:px-8 md:px-16 lg:px-24 overflow-hidden relative z-[1]">
+        <div className="max-w-[640px] relative z-10">
           {/* Blurred Intro Label */}
           <div
-            className="pointer-events-none select-none mb-5 sm:mb-6"
+            className="pointer-events-none select-none mb-6 sm:mb-8"
             style={{
-              fontSize: "clamp(18px, 4vw, 26px)",
-              lineHeight: "1.3",
+              fontSize: "clamp(15px, 3vw, 19px)",
+              lineHeight: 1.4,
               fontWeight: 400,
               color: "#000",
               filter: "blur(4px)",
+              opacity: 0.85,
             }}
           >
             Hey there, meet EventPilot,
@@ -241,69 +271,108 @@ export default function LandingPage() {
             Your Adaptive Event Intelligence Agent
           </div>
 
-          {/* Typewriter Text */}
-          <p
-            className="text-black mb-5 sm:mb-6 min-h-[54px]"
+          {/* Typewriter Headline */}
+          <h1
+            className="text-black tracking-tight mb-6 sm:mb-8 min-h-[3.45em]"
             style={{
-              fontSize: "clamp(18px, 4vw, 26px)",
-              lineHeight: "1.35",
+              fontFamily: "var(--font-heading)",
+              fontSize: "clamp(30px, 6.5vw, 56px)",
+              lineHeight: 1.12,
               fontWeight: 400,
             }}
           >
-            {displayed}
-            {!done && (
-              <span className="inline-block w-[2px] h-[1.1em] bg-black align-middle ml-[2px] animate-blink" />
-            )}
+            {headlineLines.map((line, i) => (
+              <span key={i} className="block">
+                {line}
+                {i === headlineLines.length - 1 && !done && (
+                  <span className="inline-block w-[3px] h-[0.95em] bg-black align-middle ml-[3px] animate-blink" />
+                )}
+              </span>
+            ))}
+          </h1>
+
+          {/* Description */}
+          <p
+            className={`text-black/70 max-w-lg mb-8 sm:mb-10 transition-all duration-500 ease-out ${
+              showDescription ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            }`}
+            style={{
+              fontSize: "clamp(14px, 2.5vw, 17px)",
+              lineHeight: 1.6,
+            }}
+          >
+            EventPilot reads your event posters and announcements, drafts the right
+            registration or feedback form, and asks for your approval before
+            anything goes live on Google Forms — then turns participant
+            responses into insight.
           </p>
 
-          {/* Action Pills */}
+          {/* Primary + Secondary Actions */}
           <div
-            className={`flex flex-wrap gap-y-1 transition-all duration-[400ms] ease-out ${
-              pillsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            className={`flex flex-wrap items-center gap-3 sm:gap-4 transition-all duration-500 ease-out ${
+              showActions ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
             }`}
           >
             <Link
               href="/workspace"
-              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
-              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              className="inline-flex items-center justify-center gap-2 bg-black text-white rounded-full px-6 py-3 sm:py-3.5 hover:bg-slate-800 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.5)] transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(14px, 2.5vw, 16px)", fontFamily: "var(--font-heading)" }}
             >
               Upload event source
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
-              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              className="inline-flex items-center justify-center bg-white/90 text-black border border-black/15 rounded-full px-5 py-3 sm:py-3.5 hover:bg-white transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(14px, 2.5vw, 16px)" }}
             >
               View dashboard
             </Link>
+          </div>
+
+          {/* Secondary Group */}
+          <div
+            className={`flex flex-wrap items-center gap-2 mt-3 transition-all duration-500 ease-out delay-150 ${
+              showActions ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+            }`}
+          >
             <Link
               href="/approval"
-              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
-              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              className="inline-flex items-center justify-center bg-white/70 text-black/80 border border-black/10 rounded-full px-4 py-2 hover:bg-white hover:text-black transition-colors duration-200 text-[13px] whitespace-nowrap"
             >
               Security settings
             </Link>
             <Link
               href="/workspace"
-              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
-              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              className="inline-flex items-center justify-center bg-white/70 text-black/80 border border-black/10 rounded-full px-4 py-2 hover:bg-white hover:text-black transition-colors duration-200 text-[13px] whitespace-nowrap"
             >
               See how it works
             </Link>
             <button
               onClick={handleCopyEmail}
-              className="inline-flex items-center justify-center gap-2 sm:gap-3 text-white bg-transparent border border-white rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-white hover:text-black transition-colors duration-200 whitespace-nowrap"
-              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              className="inline-flex items-center justify-center gap-2 bg-white/70 text-black/80 border border-black/10 rounded-full px-4 py-2 hover:bg-white hover:text-black transition-colors duration-200 text-[13px] whitespace-nowrap"
             >
               <span>
-                Reach us: <span className="underline underline-offset-1">hello@eventpilot.ai</span>
+                Reach us: <span className="underline underline-offset-2">hello@eventpilot.ai</span>
               </span>
               {copied ? (
-                <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <Check className="w-3.5 h-3.5 flex-shrink-0" />
               ) : (
-                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <Copy className="w-3.5 h-3.5 flex-shrink-0" />
               )}
             </button>
+          </div>
+
+          {/* Product Flow */}
+          <div
+            className={`mt-10 sm:mt-12 font-mono text-black/50 tracking-wide transition-all duration-500 ease-out delay-300 ${
+              showActions ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            }`}
+            style={{ fontSize: "clamp(10px, 1.8vw, 12px)" }}
+          >
+            Analyze source <span className="mx-1">→</span> Draft form <span className="mx-1">→</span>{" "}
+            Your approval <span className="mx-1">→</span> Google Forms <span className="mx-1">→</span>{" "}
+            Insights
           </div>
         </div>
       </main>

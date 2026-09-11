@@ -86,14 +86,14 @@ export default function LoginPage() {
       </div>
 
       {/* Right Login Pane */}
-      <div className="flex-1 min-h-full flex items-center justify-center p-6 sm:p-10 lg:p-12 bg-[#06080d]">
+      <div className="flex-1 min-h-full flex items-center justify-center p-6 sm:p-10 lg:p-12 bg-[#f8f9fa]">
         <div className="w-full max-w-[460px] space-y-6">
           {/* Header */}
           <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
               Welcome back
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-gray-600">
               Log in to continue monitoring your events and forms.
             </p>
           </div>
@@ -101,21 +101,21 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Email</label>
+              <label className="text-xs font-medium text-gray-700">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-slate-600 transition-all placeholder:text-slate-500"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-900 text-sm focus:outline-none focus:border-gray-500 transition-all placeholder:text-gray-400"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-slate-300">Password</label>
-                <a href="#" className="text-[11px] text-slate-400 hover:text-white">
+                <label className="text-xs font-medium text-gray-700">Password</label>
+                <a href="#" className="text-[11px] text-gray-500 hover:text-gray-700">
                   Forgot password?
                 </a>
               </div>
@@ -125,7 +125,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-800 text-white text-sm focus:outline-none focus:border-slate-600 transition-all placeholder:text-slate-500"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-900 text-sm focus:outline-none focus:border-gray-500 transition-all placeholder:text-gray-400"
               />
             </div>
 
@@ -141,11 +141,11 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="relative flex items-center justify-center my-4">
-            <div className="border-t border-slate-800 w-full" />
-            <span className="bg-[#06080d] px-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="border-t border-gray-300 w-full" />
+            <span className="bg-[#f8f9fa] px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
               OR
             </span>
-            <div className="border-t border-slate-800 w-full" />
+            <div className="border-t border-gray-300 w-full" />
           </div>
 
           {/* Google Sign In */}
@@ -176,15 +176,15 @@ export default function LoginPage() {
           </button>
 
           {/* Security Note */}
-          <div className="p-3.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center gap-2.5 text-xs text-slate-400">
-            <Lock className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <div className="p-3.5 bg-gray-100 border border-gray-200 rounded-xl flex items-center gap-2.5 text-xs text-gray-600">
+            <Lock className="w-4 h-4 text-emerald-500 flex-shrink-0" />
             <span>AES-256-GCM encrypted OAuth tokens with human authorization.</span>
           </div>
 
           {/* Footer */}
-          <p className="text-center text-xs text-slate-400 pt-2">
+          <p className="text-center text-xs text-gray-500 pt-2">
             Don't have an account?{" "}
-            <Link href="/" className="font-semibold text-white underline underline-offset-4">
+            <Link href="/" className="font-semibold text-gray-900 underline underline-offset-4">
               Start analyzing
             </Link>
           </p>
