@@ -6,7 +6,7 @@ const DEFAULT_USER_EMAIL = "organizer@eventpilot.ai";
 
 /**
  * Gets or creates the current active user.
- * In a hackathon / demo context, provides a persistent active user session
+ * Provides a persistent active user session
  * linked to their GoogleConnection when they authenticate via Google OAuth.
  */
 export async function getCurrentUser() {

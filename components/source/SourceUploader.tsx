@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, FileText, Image as ImageIcon, FileCode, AlertCircle, Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { Upload, FileText, Image as ImageIcon, FileCode, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 
 interface SourceUploaderProps {
   onSourceUploaded: (sourceData: any) => void;
@@ -94,15 +94,14 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 shadow-xl backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-400" />
-            1. Ingest Event Source
+          <h2 className="text-lg font-semibold text-slate-100">
+            Upload Event Source
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Feed event poster, PDF brochure, presentation, or raw announcement to Agent 1
+          <p className="text-sm text-slate-400 mt-1">
+            Poster, PDF, presentation, or paste announcement text
           </p>
         </div>
 
@@ -113,22 +112,22 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
             onClick={() => setActiveTab("file")}
             className={`px-3 py-1.5 rounded-md transition-all ${
               activeTab === "file"
-                ? "bg-blue-600 text-white shadow-sm"
+                ? "bg-slate-800 text-white"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            File Upload
+            File
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("text")}
             className={`px-3 py-1.5 rounded-md transition-all ${
               activeTab === "text"
-                ? "bg-blue-600 text-white shadow-sm"
+                ? "bg-slate-800 text-white"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Paste Text
+            Text
           </button>
         </div>
       </div>
@@ -140,7 +139,7 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === "file" ? (
           <div>
             <div
@@ -149,12 +148,12 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${
                 dragActive
-                  ? "border-blue-500 bg-blue-950/20"
+                  ? "border-slate-600 bg-slate-800/50"
                   : selectedFile
-                  ? "border-emerald-600/60 bg-emerald-950/10"
-                  : "border-slate-700/80 hover:border-slate-600 bg-slate-950/50"
+                  ? "border-slate-600 bg-slate-800/30"
+                  : "border-slate-700 hover:border-slate-600 bg-slate-950/50"
               }`}
             >
               <input
@@ -166,9 +165,9 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
               />
 
               {selectedFile ? (
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-4">
                   {previewUrl ? (
-                    <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-slate-700 shadow-md">
+                    <div className="relative w-40 h-40 rounded-lg overflow-hidden border border-slate-700">
                       <img
                         src={previewUrl}
                         alt="Event Poster Preview"
@@ -176,14 +175,14 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
                       />
                     </div>
                   ) : (
-                    <div className="p-4 bg-slate-800 rounded-full text-blue-400">
+                    <div className="p-4 bg-slate-800 rounded-full text-slate-300">
                       <FileText className="w-8 h-8" />
                     </div>
                   )}
                   <div className="text-center">
                     <p className="text-sm font-medium text-slate-200">{selectedFile.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to analyze
+                    <p className="text-xs text-slate-400 mt-1">
+                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
                   <button
@@ -193,25 +192,25 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
                       setSelectedFile(null);
                       setPreviewUrl(null);
                     }}
-                    className="text-xs text-red-400 hover:text-red-300 underline mt-1"
+                    className="text-xs text-slate-400 hover:text-slate-300 underline"
                   >
                     Change File
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="p-4 bg-slate-800/80 rounded-full text-blue-400">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-4 bg-slate-800/80 rounded-full text-slate-400">
                     <Upload className="w-8 h-8" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-200">
-                      Drop event poster, flyer, PDF brochure or PPT here
+                      Drop event poster, PDF, or presentation
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Supports PNG, JPG, PDF, PPTX, TXT up to 15MB
+                    <p className="text-xs text-slate-400 mt-2">
+                      PNG, JPG, PDF, PPTX, TXT up to 15MB
                     </p>
                   </div>
-                  <span className="text-xs px-3 py-1 bg-slate-800 rounded-md text-slate-300 border border-slate-700">
+                  <span className="text-xs px-4 py-2 bg-slate-800 rounded-lg text-slate-300 border border-slate-700">
                     Browse Files
                   </span>
                 </div>
@@ -220,15 +219,15 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
           </div>
         ) : (
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-2">
-              Event Announcement / Schedule Text
+            <label className="block text-xs font-medium text-slate-300 mb-3">
+              Event Announcement
             </label>
             <textarea
-              rows={6}
+              rows={8}
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              placeholder="Paste email invitation, WhatsApp notice, meetup description, or conference schedule here...&#10;&#10;Example:&#10;🚀 AI Agents Workshop 2026&#10;Date: October 15, 2026 | 10:00 AM&#10;Venue: Main Auditorium, CS Department&#10;Topics: Multi-agent systems, GLM reasoning, Tool execution&#10;Organized by: IEEE CS Chapter"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono resize-y"
+              placeholder="Paste email invitation, WhatsApp notice, meetup description, or conference schedule...&#10;&#10;Example:&#10;AI Agents Workshop 2026&#10;Date: October 15, 2026 | 10:00 AM&#10;Venue: Main Auditorium, CS Department&#10;Organized by: IEEE CS Chapter"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-4 text-sm text-slate-200 focus:outline-none focus:border-slate-600 font-sans resize-y"
             />
           </div>
         )}
@@ -237,16 +236,16 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
           <button
             type="submit"
             disabled={isLoading || (activeTab === "file" && !selectedFile) || (activeTab === "text" && !rawText.trim())}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-6 py-3 bg-slate-200 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 text-sm font-semibold rounded-lg shadow-md transition-all cursor-pointer"
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Ingesting Source...</span>
+                <span>Analyzing...</span>
               </>
             ) : (
               <>
-                <span>Ingest & Run Agent 1</span>
+                <span>Analyze Event</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

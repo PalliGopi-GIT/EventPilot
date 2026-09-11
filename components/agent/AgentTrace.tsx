@@ -3,14 +3,9 @@
 import React from "react";
 import {
   CheckCircle2,
-  CircleDot,
   Circle,
-  AlertCircle,
   Brain,
-  ShieldCheck,
-  Send,
-  BarChart3,
-  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export type AgentStepStatus = "completed" | "active" | "pending" | "error";
@@ -21,7 +16,6 @@ export interface AgentStep {
   sublabel?: string;
   stage: "PERCEIVE" | "UNDERSTAND" | "PLAN" | "APPROVE" | "EXECUTE" | "OBSERVE" | "REPORT";
   status: AgentStepStatus;
-  timestamp?: string;
 }
 
 interface AgentTraceProps {
@@ -37,7 +31,6 @@ export function AgentTrace({
   activeAction,
   confidence,
 }: AgentTraceProps) {
-  // Derive deterministic real steps based on actual current stage
   const getStepStatus = (stepId: string): AgentStepStatus => {
     const stageOrder = ["source", "event", "form", "approval", "success", "responses", "insights"];
     const currentIndex = stageOrder.indexOf(currentStage);
@@ -57,7 +50,7 @@ export function AgentTrace({
 
     if (stepIndex < currentIndex) return "completed";
     if (stepIndex === currentIndex) {
-      return isProcessing ? "active" : "active";
+      return "active";
     }
     return "pending";
   };
@@ -65,124 +58,135 @@ export function AgentTrace({
   const steps: AgentStep[] = [
     {
       id: "source_received",
-      label: "Perceive: Ingest Source",
-      sublabel: "Poster / Doc / Text parsed",
+      label: "Ingest",
+      sublabel: "Source received",
       stage: "PERCEIVE",
       status: getStepStatus("source_received"),
     },
     {
       id: "source_analyzed",
-      label: "Understand: Agent 1 Reasoning",
-      sublabel: confidence ? `Confidence: ${(confidence * 100).toFixed(0)}%` : "Classify & extract entities",
+      label: "Analyze",
+      sublabel: confidence ? `${(confidence * 100).toFixed(0)}% confidence` : "Extract entities",
       stage: "UNDERSTAND",
       status: getStepStatus("source_analyzed"),
     },
     {
       id: "event_extracted",
-      label: "Safety: Human Event Review",
-      sublabel: "Verify event parameters",
+      label: "Review",
+      sublabel: "Safety checkpoint",
       stage: "UNDERSTAND",
       status: getStepStatus("event_extracted"),
     },
     {
       id: "form_planned",
-      label: "Plan: GLM Form Architect",
-      sublabel: "Synthesize form & action plan",
+      label: "Plan",
+      sublabel: "Form schema",
       stage: "PLAN",
       status: getStepStatus("form_planned"),
     },
     {
       id: "human_approval",
-      label: "Approve: Human-in-the-Loop",
-      sublabel: "Explicit authorization gate",
+      label: "Approve",
+      sublabel: "Human-in-the-Loop",
       stage: "APPROVE",
       status: getStepStatus("human_approval"),
     },
     {
       id: "google_form_created",
-      label: "Execute: Google Forms API",
-      sublabel: "Deterministic deployment",
+      label: "Deploy",
+      sublabel: "Google Forms API",
       stage: "EXECUTE",
       status: getStepStatus("google_form_created"),
     },
     {
       id: "responses_observed",
-      label: "Observe: Fetch Live Responses",
-      sublabel: "Real participant submissions",
+      label: "Observe",
+      sublabel: "Collect responses",
       stage: "OBSERVE",
       status: getStepStatus("responses_observed"),
     },
     {
       id: "insights_reported",
-      label: "Report: GLM Response Intelligence",
-      sublabel: "Synthesize themes & stats",
+      label: "Report",
+      sublabel: "Intelligence",
       stage: "REPORT",
       status: getStepStatus("insights_reported"),
     },
   ];
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg backdrop-blur-md">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/20">
-            <Brain className="w-4 h-4 animate-pulse" />
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-slate-800 rounded-lg text-slate-300">
+            <Brain className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+            <div className="text-sm font-semibold text-slate-100">
               Agent Execution Loop
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300 border border-blue-700/50 font-mono font-normal">
-                Autonomous + Human-Gated
-              </span>
-            </h3>
+            </div>
             <p className="text-xs text-slate-400">
-              Deterministic state machine tracking GLM & API actions
+              Perceive → Understand → Plan → Approve → Execute → Observe → Report
             </p>
           </div>
         </div>
 
         {activeAction && (
-          <div className="text-xs font-mono px-2.5 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700">
-            {activeAction}
+          <div className="flex items-center gap-2 text-xs px-3 py-1.5 bg-slate-800 rounded-lg text-slate-300 border border-slate-700">
+            <Zap className="w-3.5 h-3.5 text-slate-400" />
+            <span>{activeAction}</span>
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-        {steps.map((step, idx) => (
-          <div
-            key={step.id}
-            className={`flex flex-col p-2.5 rounded-lg border transition-all ${
-              step.status === "completed"
-                ? "bg-emerald-950/20 border-emerald-800/40 text-emerald-300"
-                : step.status === "active"
-                ? "bg-blue-950/40 border-blue-600 text-blue-200 shadow-sm shadow-blue-500/10"
-                : "bg-slate-900/40 border-slate-800/60 text-slate-500"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-mono font-semibold tracking-wider uppercase opacity-70">
-                {step.stage}
-              </span>
-              {step.status === "completed" && (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              )}
-              {step.status === "active" && (
-                <CircleDot className="w-3.5 h-3.5 text-blue-400 animate-spin" />
-              )}
-              {step.status === "pending" && <Circle className="w-3.5 h-3.5 text-slate-600" />}
-            </div>
+        {steps.map((step) => {
+          const isCompleted = step.status === "completed";
+          const isActive = step.status === "active";
 
-            <div className="text-xs font-medium truncate" title={step.label}>
-              {step.label.split(":")[1]?.trim() || step.label}
-            </div>
-            {step.sublabel && (
-              <div className="text-[10px] text-slate-400 truncate mt-0.5" title={step.sublabel}>
-                {step.sublabel}
+          return (
+            <div
+              key={step.id}
+              className={`flex flex-col p-3 rounded-lg border transition-all duration-200 ${
+                isCompleted
+                  ? "bg-emerald-950/20 border-emerald-800/50 text-emerald-200"
+                  : isActive
+                  ? "bg-slate-800 border-slate-600 text-white"
+                  : "bg-slate-900/30 border-slate-800/60 text-slate-500"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span
+                  className={`text-[9px] font-semibold tracking-wider uppercase ${
+                    isActive ? "text-slate-300" : isCompleted ? "text-emerald-400" : "text-slate-600"
+                  }`}
+                >
+                  {step.stage}
+                </span>
+
+                {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                {isActive && (
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400" />
+                  </span>
+                )}
+                {step.status === "pending" && <Circle className="w-3 h-3 text-slate-700" />}
               </div>
-            )}
-          </div>
-        ))}
+
+              <div className="text-xs font-medium truncate text-slate-200">{step.label}</div>
+              {step.sublabel && (
+                <div
+                  className={`text-[10px] truncate mt-0.5 ${
+                    isActive ? "text-slate-400" : isCompleted ? "text-emerald-300/80" : "text-slate-500"
+                  }`}
+                >
+                  {step.sublabel}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

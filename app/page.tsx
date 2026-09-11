@@ -1,529 +1,312 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { AgentTrace } from "@/components/agent/AgentTrace";
-import { AgentStatus } from "@/components/agent/AgentStatus";
-import { SourceUploader } from "@/components/source/SourceUploader";
-import { SourceAnalysis } from "@/components/source/SourceAnalysis";
-import { EventReview } from "@/components/event/EventReview";
-import { FormBuilder } from "@/components/form/FormBuilder";
-import { ApprovalPanel } from "@/components/approval/ApprovalPanel";
-import { ResponseStats } from "@/components/insights/ResponseStats";
-import { Themes } from "@/components/insights/Themes";
-import { Recommendations } from "@/components/insights/Recommendations";
-import {
-  Sparkles,
-  CheckCircle2,
-  RefreshCw,
-  ExternalLink,
-  Loader2,
-  BarChart3,
-  Users,
-  MessageSquare,
-  AlertCircle,
-} from "lucide-react";
-import type {
-  SourceAnalysisResult,
-  EventExtractionResult,
-  FormDefinition,
-  ActionPlan,
-  ResponseAnalysisResult,
-} from "@/lib/ai/schemas";
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { Copy, Check } from "lucide-react";
 
-type WorkflowStage = "source" | "event" | "form" | "approval" | "success" | "responses" | "insights";
+function useTypewriter(text: string, speed = 38, startDelay = 600) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
 
-export default function AgentWorkspacePage() {
-  const [currentStage, setCurrentStage] = useState<WorkflowStage>("source");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeActionText, setActiveActionText] = useState<string>("Waiting for event source");
-
-  // Workflow State
-  const [source, setSource] = useState<any>(null);
-  const [sourceAnalysis, setSourceAnalysis] = useState<SourceAnalysisResult | null>(null);
-  const [eventData, setEventData] = useState<(EventExtractionResult & { id?: string }) | null>(null);
-  const [formData, setFormData] = useState<(FormDefinition & { id: string }) | null>(null);
-  const [actionPlan, setActionPlan] = useState<ActionPlan | null>(null);
-  const [lastNlExplanation, setLastNlExplanation] = useState<string | null>(null);
-  const [isModifyingForm, setIsModifyingForm] = useState(false);
-
-  // Google Connection & Deployment State
-  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; email: string | null }>({
-    connected: false,
-    email: null,
-  });
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [deploymentResult, setDeploymentResult] = useState<{
-    formUrl: string;
-    responderUri: string;
-    googleFormId: string;
-  } | null>(null);
-  const [approvalError, setApprovalError] = useState<string | null>(null);
-
-  // Response Observation & Insights
-  const [isSyncingResponses, setIsSyncingResponses] = useState(false);
-  const [storedResponses, setStoredResponses] = useState<any[]>([]);
-  const [analysisResult, setAnalysisResult] = useState<ResponseAnalysisResult | null>(null);
-  const [isAnalyzingResponses, setIsAnalyzingResponses] = useState(false);
-
-  // Check auth status on mount
   useEffect(() => {
-    fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.googleConnection) {
-          setGoogleStatus({
-            connected: data.googleConnection.connected,
-            email: data.googleConnection.email,
-          });
+    setDisplayed("");
+    setDone(false);
+
+    let currentIndex = 0;
+    let timer: NodeJS.Timeout;
+
+    const delayTimeout = setTimeout(() => {
+      timer = setInterval(() => {
+        if (currentIndex < text.length) {
+          currentIndex++;
+          setDisplayed(text.slice(0, currentIndex));
+        } else {
+          setDone(true);
+          clearInterval(timer);
         }
-      })
-      .catch(() => {});
+      }, speed);
+    }, startDelay);
+
+    return () => {
+      clearTimeout(delayTimeout);
+      if (timer) clearInterval(timer);
+    };
+  }, [text, speed, startDelay]);
+
+  return { displayed, done };
+}
+
+export default function LandingPage() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [pillsVisible, setPillsVisible] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const { displayed, done } = useTypewriter(
+    "Glad you stopped in. Good taste tends to find us. Now, what are we building?",
+    38,
+    600
+  );
+
+  // Show pills 400ms after mount
+  useEffect(() => {
+    const timer = setTimeout(() => setPillsVisible(true), 400);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Handler: Source Uploaded -> Automatically trigger Agent 1 Source Analysis
-  const handleSourceUploaded = async (uploadedSource: any) => {
-    setSource(uploadedSource);
-    setIsProcessing(true);
-    setActiveActionText("Agent 1: Analyzing Source with GLM...");
+  // Mouse-scrub video control
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
+    let prevX = 0;
+    let isSeeking = false;
+    let targetTime = 0;
+    const SENSITIVITY = 0.8;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!video.duration) return;
+
+      const currentX = e.clientX;
+      if (prevX === 0) {
+        prevX = currentX;
+        return;
+      }
+
+      const delta = currentX - prevX;
+      prevX = currentX;
+
+      const timeOffset = (delta / window.innerWidth) * SENSITIVITY * video.duration;
+      targetTime = Math.max(0, Math.min(video.duration, (video.currentTime || 0) + timeOffset));
+
+      if (!isSeeking) {
+        isSeeking = true;
+        video.currentTime = targetTime;
+      }
+    };
+
+    const handleSeeked = () => {
+      isSeeking = false;
+      if (video && Math.abs(video.currentTime - targetTime) > 0.1) {
+        video.currentTime = targetTime;
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    video.addEventListener("seeked", handleSeeked);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      video.removeEventListener("seeked", handleSeeked);
+    };
+  }, []);
+
+  const handleCopyEmail = async () => {
     try {
-      const res = await fetch("/api/sources/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceId: uploadedSource.id }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Analysis failed");
-      }
-
-      setSourceAnalysis(data.analysis);
-      setEventData(data.event);
-      setActiveActionText("Source Analyzed • Human Review Ready");
-    } catch (err: any) {
-      alert("Error in Agent 1 analysis: " + err.message);
-      setActiveActionText("Analysis Failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Handler: Human Event Review Confirmed -> Generate Form via GLM
-  const handleSaveAndGenerateForm = async (
-    updatedEvent: any,
-    formType: "REGISTRATION" | "FEEDBACK",
-    customInstructions?: string
-  ) => {
-    setIsProcessing(true);
-    setActiveActionText(`GLM: Synthesizing ${formType} Form...`);
-
-    try {
-      // 1. Update event in DB if needed
-      if (updatedEvent.id) {
-        await fetch(`/api/events/${updatedEvent.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedEvent),
-        });
-      }
-
-      setEventData(updatedEvent);
-
-      // 2. Call GLM Form Generator
-      const res = await fetch("/api/forms/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: updatedEvent.id,
-          formType,
-          customInstructions,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to generate form");
-      }
-
-      setFormData(data.form);
-      setActionPlan(data.form.actionPlan);
-      setCurrentStage("form");
-      setActiveActionText("Form Generated • Conversational Refinement Ready");
-    } catch (err: any) {
-      alert("Form generation error: " + err.message);
-      setActiveActionText("Form Generation Failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Handler: Conversational Natural Language Form Modification
-  const handleModifyForm = async (instruction: string) => {
-    if (!formData?.id) return;
-    setIsModifyingForm(true);
-    setActiveActionText(`GLM: Applying instruction: "${instruction.slice(0, 30)}..."`);
-
-    try {
-      const res = await fetch("/api/forms/modify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formId: formData.id,
-          userInstruction: instruction,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to modify form");
-      }
-
-      setFormData(data.form);
-      setActionPlan(data.form.actionPlan);
-      setLastNlExplanation(data.explanation);
-      setActiveActionText("Form Modified Successfully");
-    } catch (err: any) {
-      alert("Form modification error: " + err.message);
-    } finally {
-      setIsModifyingForm(false);
-    }
-  };
-
-  // Handler: Start Google OAuth
-  const handleConnectGoogle = async () => {
-    try {
-      const res = await fetch("/api/auth/google");
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      await navigator.clipboard.writeText("hello@eventpilot.ai");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to start Google OAuth:", err);
-    }
-  };
-
-  // Handler: Human Approves and Executes Real Google Form Deployment
-  const handleApproveAndDeploy = async (requestId: string) => {
-    if (!formData?.id) return;
-    setIsDeploying(true);
-    setApprovalError(null);
-    setActiveActionText("Executing Google Forms API...");
-
-    try {
-      // 1. Approve form in backend
-      await fetch("/api/forms/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formId: formData.id,
-          requestId,
-        }),
-      });
-
-      // 2. Call Google Form Create
-      const res = await fetch("/api/google/forms/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formId: formData.id,
-          requestId,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to deploy Google Form");
-      }
-
-      setDeploymentResult({
-        formUrl: data.formUrl,
-        responderUri: data.responderUri,
-        googleFormId: data.googleFormId,
-      });
-
-      setCurrentStage("success");
-      setActiveActionText("Real Google Form Live & Ready for Participants");
-    } catch (err: any) {
-      setApprovalError(err.message || "Failed to deploy to Google Forms");
-      setActiveActionText("Deployment Error");
-    } finally {
-      setIsDeploying(false);
-    }
-  };
-
-  // Handler: Observe & Fetch Real Google Form Responses
-  const handleSyncResponses = async () => {
-    if (!formData?.id) return;
-    setIsSyncingResponses(true);
-    setActiveActionText("Observing: Fetching live Google Form responses...");
-
-    try {
-      const res = await fetch("/api/google/forms/responses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: formData.id }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to sync responses");
-      }
-
-      setStoredResponses(data.responses);
-      setActiveActionText(`Observed ${data.totalResponses} Real Submissions`);
-
-      // Automatically trigger response analysis if there are responses
-      if (data.totalResponses > 0) {
-        handleAnalyzeResponses();
-      }
-    } catch (err: any) {
-      alert("Error syncing responses: " + err.message);
-    } finally {
-      setIsSyncingResponses(false);
-    }
-  };
-
-  // Handler: Run GLM Response Intelligence Analysis
-  const handleAnalyzeResponses = async () => {
-    if (!formData?.id) return;
-    setIsAnalyzingResponses(true);
-    setActiveActionText("GLM: Synthesizing real response intelligence...");
-
-    try {
-      const res = await fetch(`/api/insights/${formData.id}`, {
-        method: "POST",
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to analyze responses");
-      }
-
-      setAnalysisResult(data.analysis);
-      setCurrentStage("insights");
-      setActiveActionText("Response Intelligence Generated");
-    } catch (err: any) {
-      alert("Error generating insights: " + err.message);
-    } finally {
-      setIsAnalyzingResponses(false);
+      console.error("Failed to copy:", err);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* System Status Bar */}
-      <AgentStatus
-        googleConnected={googleStatus.connected}
-        googleEmail={googleStatus.email}
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Video */}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        style={{ objectPosition: "70% center" }}
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4"
       />
 
-      {/* Agent Trace Loop Header */}
-      <AgentTrace
-        currentStage={currentStage}
-        isProcessing={isProcessing || isDeploying || isSyncingResponses || isAnalyzingResponses}
-        activeAction={activeActionText}
-        confidence={sourceAnalysis?.confidence}
-      />
-
-      {/* Main Workflow Viewports */}
-      <div className="space-y-6">
-        {/* Step 1: Ingest Source & Agent 1 Output */}
-        {currentStage === "source" && (
-          <div className="space-y-6">
-            <SourceUploader
-              onSourceUploaded={handleSourceUploaded}
-              isLoading={isProcessing}
-            />
-
-            {sourceAnalysis && (
-              <SourceAnalysis
-                analysis={sourceAnalysis}
-                onProceedToReview={() => setCurrentStage("event")}
-              />
-            )}
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-10 px-5 sm:px-8 py-4 sm:py-5">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-[21px] sm:text-[26px] tracking-tight text-black"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              EventPilot®
+            </Link>
+            <span
+              className="text-[25px] sm:text-[30px] text-black select-none"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              ✳︎
+            </span>
           </div>
-        )}
 
-        {/* Step 2: Human Event Review Checkpoint */}
-        {currentStage === "event" && eventData && (
-          <EventReview
-            initialEvent={eventData}
-            onSaveAndGenerateForm={handleSaveAndGenerateForm}
-            isLoading={isProcessing}
-          />
-        )}
-
-        {/* Step 3: Form Specification & Natural Language Editor */}
-        {currentStage === "form" && formData && (
-          <FormBuilder
-            form={formData}
-            actionPlan={actionPlan}
-            onModifyForm={handleModifyForm}
-            onProceedToApproval={() => setCurrentStage("approval")}
-            isModifying={isModifyingForm}
-            lastExplanation={lastNlExplanation}
-          />
-        )}
-
-        {/* Step 4 & 5: Human Approval & Google Form Deployment */}
-        {(currentStage === "approval" || currentStage === "success") && formData && (
-          <div className="space-y-6">
-            <ApprovalPanel
-              form={formData}
-              actionPlan={actionPlan || {
-                action: "CREATE_GOOGLE_FORM",
-                formType: (formData.formType as any) || "REGISTRATION",
-                title: formData.title,
-                questionCount: formData.questions.length,
-                questionsSummary: formData.questions.map((q) => ({
-                  label: q.label,
-                  type: q.type,
-                  required: q.required,
-                })),
-                provider: "Google Forms",
-                requiresApproval: true,
-              }}
-              googleConnected={googleStatus.connected}
-              googleEmail={googleStatus.email}
-              onConnectGoogle={handleConnectGoogle}
-              onApproveAndCreate={handleApproveAndDeploy}
-              onCancel={() => setCurrentStage("form")}
-              isDeploying={isDeploying}
-              deploymentResult={deploymentResult}
-              error={approvalError}
-            />
-
-            {/* Live Observation & Response Collection Panel (Once deployed) */}
-            {deploymentResult && (
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-blue-400" />
-                      5. Live Participant Submissions (Google Forms API)
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Share the link with participants, then fetch real responses for GLM analysis.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleSyncResponses}
-                    disabled={isSyncingResponses}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow-md transition-all cursor-pointer flex-shrink-0"
-                  >
-                    {isSyncingResponses ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    <span>Sync Live Responses</span>
-                  </button>
-                </div>
-
-                {storedResponses.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-xs text-slate-300">
-                      <span>{storedResponses.length} Real Responses Synced</span>
-                      <button
-                        onClick={handleAnalyzeResponses}
-                        disabled={isAnalyzingResponses}
-                        className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        {isAnalyzingResponses ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3.5 h-3.5" />
-                        )}
-                        <span>Run GLM Response Analysis</span>
-                      </button>
-                    </div>
-
-                    {/* Table of submissions */}
-                    <div className="border border-slate-800 rounded-lg overflow-x-auto bg-slate-950">
-                      <table className="w-full text-xs text-left text-slate-300">
-                        <thead className="bg-slate-900 text-slate-400 uppercase font-mono text-[10px]">
-                          <tr>
-                            <th className="px-3 py-2">ID</th>
-                            <th className="px-3 py-2">Respondent Email</th>
-                            <th className="px-3 py-2">Submitted Time</th>
-                            <th className="px-3 py-2">Answers Summary</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800">
-                          {storedResponses.map((r, idx) => (
-                            <tr key={r.responseId || idx} className="hover:bg-slate-900/50">
-                              <td className="px-3 py-2 font-mono text-slate-400">
-                                {r.responseId?.slice(-8) || idx + 1}
-                              </td>
-                              <td className="px-3 py-2 text-slate-200">
-                                {r.respondentEmail || "Anonymous Participant"}
-                              </td>
-                              <td className="px-3 py-2 font-mono text-slate-400">
-                                {new Date(r.submittedAt).toLocaleTimeString()}
-                              </td>
-                              <td className="px-3 py-2 text-slate-300 max-w-xs truncate">
-                                {JSON.stringify(r.answers)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center bg-slate-950/60 rounded-lg border border-slate-800/80">
-                    <p className="text-xs text-slate-400">
-                      No responses received yet. Send the Google Form link to participants and click{" "}
-                      <strong>Sync Live Responses</strong>.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-1 text-[23px] text-black">
+            <Link href="/workspace" className="hover:opacity-60 transition-opacity">Workspace</Link>
+            <span>,</span>
+            <Link href="/dashboard" className="hover:opacity-60 transition-opacity ml-1">Dashboard</Link>
+            <span>,</span>
+            <Link href="/approval" className="hover:opacity-60 transition-opacity ml-1">Security</Link>
           </div>
-        )}
 
-        {/* Step 6: GLM Response Intelligence Dashboard */}
-        {(currentStage === "insights" || analysisResult) && analysisResult && (
-          <div className="space-y-6 pt-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-indigo-400" />
-                6. GLM Event Intelligence & Response Analysis
-              </h2>
-              <button
-                onClick={handleSyncResponses}
-                disabled={isSyncingResponses}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-md border border-slate-700 transition-all cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Refresh Data</span>
-              </button>
-            </div>
+          {/* Desktop CTA */}
+          <Link
+            href="/workspace"
+            className="hidden md:block text-[23px] text-black underline underline-offset-2 hover:opacity-60 transition-opacity"
+          >
+            Start building
+          </Link>
 
-            {/* Metrics */}
-            <ResponseStats
-              analysis={analysisResult}
-              responseCount={storedResponses.length || analysisResult.totalResponses}
+          {/* Mobile Hamburger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden flex flex-col gap-[5px]"
+            aria-label="Toggle menu"
+          >
+            <span
+              className={`w-6 h-[2px] bg-black transition-all duration-300 ${
+                isMobileMenuOpen ? "rotate-45 translate-y-[7px]" : ""
+              }`}
             />
-
-            {/* Strengths & Themes */}
-            <Themes
-              themes={analysisResult.themes}
-              topStrengths={analysisResult.topStrengths}
-              commonSuggestions={analysisResult.commonSuggestions}
+            <span
+              className={`w-6 h-[2px] bg-black transition-opacity duration-300 ${
+                isMobileMenuOpen ? "opacity-0" : ""
+              }`}
             />
-
-            {/* Recommendations */}
-            <Recommendations
-              recommendations={analysisResult.recommendations}
-              keyTakeaways={analysisResult.keyTakeaways}
+            <span
+              className={`w-6 h-[2px] bg-black transition-all duration-300 ${
+                isMobileMenuOpen ? "-rotate-45 -translate-y-[7px]" : ""
+              }`}
             />
-          </div>
-        )}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Overlay */}
+      <div
+        className={`md:hidden fixed inset-0 z-[9] bg-white/95 backdrop-blur-sm flex flex-col justify-center px-8 gap-8 transition-opacity duration-300 ${
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <Link
+          href="/workspace"
+          className="text-[32px] font-medium text-black"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Workspace
+        </Link>
+        <Link
+          href="/dashboard"
+          className="text-[32px] font-medium text-black"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Dashboard
+        </Link>
+        <Link
+          href="/approval"
+          className="text-[32px] font-medium text-black"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Security
+        </Link>
+        <Link
+          href="/workspace"
+          className="text-[32px] font-medium text-black underline underline-offset-2"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          Start building
+        </Link>
       </div>
+
+      {/* Hero Section */}
+      <main className="h-screen flex flex-col justify-end md:justify-center pb-12 md:pb-0 px-5 sm:px-8 md:px-10 overflow-hidden relative z-[1]">
+        <div className="max-w-xl relative z-10">
+          {/* Blurred Intro Label */}
+          <div
+            className="pointer-events-none select-none mb-5 sm:mb-6"
+            style={{
+              fontSize: "clamp(18px, 4vw, 26px)",
+              lineHeight: "1.3",
+              fontWeight: 400,
+              color: "#000",
+              filter: "blur(4px)",
+            }}
+          >
+            Hey there, meet EventPilot,
+            <br />
+            Your Adaptive Event Intelligence Agent
+          </div>
+
+          {/* Typewriter Text */}
+          <p
+            className="text-black mb-5 sm:mb-6 min-h-[54px]"
+            style={{
+              fontSize: "clamp(18px, 4vw, 26px)",
+              lineHeight: "1.35",
+              fontWeight: 400,
+            }}
+          >
+            {displayed}
+            {!done && (
+              <span className="inline-block w-[2px] h-[1.1em] bg-black align-middle ml-[2px] animate-blink" />
+            )}
+          </p>
+
+          {/* Action Pills */}
+          <div
+            className={`flex flex-wrap gap-y-1 transition-all duration-[400ms] ease-out ${
+              pillsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            }`}
+          >
+            <Link
+              href="/workspace"
+              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+            >
+              Upload event source
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+            >
+              View dashboard
+            </Link>
+            <Link
+              href="/approval"
+              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+            >
+              Security settings
+            </Link>
+            <Link
+              href="/workspace"
+              className="inline-flex items-center justify-center bg-white text-black border border-black/10 rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-black hover:text-white transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+            >
+              See how it works
+            </Link>
+            <button
+              onClick={handleCopyEmail}
+              className="inline-flex items-center justify-center gap-2 sm:gap-3 text-white bg-transparent border border-white rounded-full px-4 sm:px-5 py-[0.3em] mx-[0.2em] mb-[0.4em] hover:bg-white hover:text-black transition-colors duration-200 whitespace-nowrap"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+            >
+              <span>
+                Reach us: <span className="underline underline-offset-1">hello@eventpilot.ai</span>
+              </span>
+              {copied ? (
+                <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              ) : (
+                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

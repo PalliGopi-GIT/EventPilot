@@ -15,6 +15,7 @@ import {
   BarChart3,
   Clock,
 } from "lucide-react";
+import { CloudShader } from "@/components/dashboard/CloudShader";
 import { formatDate } from "@/lib/utils/helpers";
 
 export default function DashboardPage() {
@@ -41,21 +42,28 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-        <div>
-          <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-400" />
-            Organizer Agent Dashboard
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Overview of AI-extracted events, deployed Google Forms, and attendee submissions.
-          </p>
+      {/* Atmospheric Cloud Shader Header */}
+      <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 -mt-8 mb-8 h-32 sm:h-40 overflow-hidden rounded-b-3xl border-b border-slate-800/60">
+        <CloudShader className="opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#070b14]/60 to-[#070b14]" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6 text-blue-400" />
+              Organizer Dashboard
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2">
+              Real-time overview of extracted events, deployed forms, and live participant intelligence
+            </p>
+          </div>
         </div>
+      </div>
 
+      {/* Action Bar */}
+      <div className="flex justify-end">
         <Link
           href="/"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-md transition-all self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-md transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>New Event Workflow</span>

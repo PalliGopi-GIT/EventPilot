@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -11,9 +11,10 @@ import {
   ArrowRight,
   ExternalLink,
   Lock,
+  Loader2,
 } from "lucide-react";
 
-export default function ApprovalPage() {
+function ApprovalContent() {
   const searchParams = useSearchParams();
   const googleConnected = searchParams.get("google_connected") === "true";
   const error = searchParams.get("error");
@@ -58,10 +59,10 @@ export default function ApprovalPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-100">
-              Security & Google OAuth Status
+              Security Hub & OAuth Status
             </h1>
             <p className="text-xs text-slate-400">
-              Verify your connected Google account and action approval policies
+              Verify your connected Google account, review encryption guarantees, and authorization policies
             </p>
           </div>
         </div>
@@ -137,5 +138,19 @@ export default function ApprovalPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ApprovalPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
+      }
+    >
+      <ApprovalContent />
+    </Suspense>
   );
 }
