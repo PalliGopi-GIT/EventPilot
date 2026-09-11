@@ -1,5 +1,13 @@
 /**
- * Sliding-window in-memory rate limiter
+ * Sliding-window rate limiter with cross-invocation persistence.
+ *
+ * Vercel serverless functions re-use the same Node.js process across
+ * warm invocations but lose all module-level state on a cold start.
+ * By attaching the store to `globalThis` we keep the map alive for
+ * the entire lifetime of a warm container — the same technique Prisma
+ * uses for its singleton client.  This makes rate limiting effective
+ * within a single instance; for true multi-instance limiting at scale,
+ * swap this store for an external KV (Upstash Redis, Vercel KV, etc.).
  */
 
 interface RateLimitRecord {
@@ -7,7 +15,16 @@ interface RateLimitRecord {
   resetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitRecord>();
+// Persist across hot-reloads (dev) and warm invocations (prod)
+const globalForRateLimit = globalThis as unknown as {
+  __rateLimitStore?: Map<string, RateLimitRecord>;
+};
+
+if (!globalForRateLimit.__rateLimitStore) {
+  globalForRateLimit.__rateLimitStore = new Map<string, RateLimitRecord>();
+}
+
+const rateLimitStore = globalForRateLimit.__rateLimitStore;
 
 // Clean up expired records every 5 minutes
 if (typeof setInterval !== "undefined") {

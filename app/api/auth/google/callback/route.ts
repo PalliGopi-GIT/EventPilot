@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (error) {
-    return NextResponse.redirect(`${baseUrl}/approval?error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(`${baseUrl}/workspace?error=${encodeURIComponent(error)}`);
   }
 
   if (!code) {
     return NextResponse.redirect(
-      `${baseUrl}/approval?error=${encodeURIComponent("No authorization code provided by Google")}`
+      `${baseUrl}/workspace?error=${encodeURIComponent("No authorization code provided by Google")}`
     );
   }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       details: { email: result.googleEmail },
     });
 
-    const response = NextResponse.redirect(`${baseUrl}/approval?google_connected=true`);
+    const response = NextResponse.redirect(`${baseUrl}/workspace?google_connected=true`);
     // Set active user cookie
     response.cookies.set("eventpilot_user_id", userId, {
       path: "/",
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     console.error("Google OAuth callback error:", err);
     return NextResponse.redirect(
-      `${baseUrl}/approval?error=${encodeURIComponent(err.message || "Failed to complete Google OAuth")}`
+      `${baseUrl}/workspace?error=${encodeURIComponent(err.message || "Failed to complete Google OAuth")}`
     );
   }
 }

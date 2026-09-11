@@ -129,7 +129,7 @@ function ApprovalContent() {
           )}
 
           <Link
-            href="/"
+            href="/workspace"
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-all"
           >
             <span>Go to Agent Workspace</span>

@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
+import { rateLimit } from "@/lib/security/rateLimit";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
+
+    const rate = rateLimit(`dashboard_${user.id}`, 60, 60000);
+    if (!rate.success) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please wait." }, { status: 429 });
+    }
 
     const [events, forms, totalSources, totalEvents, totalForms, totalResponses] = await Promise.all([
       prisma.event.findMany({
