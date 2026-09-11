@@ -41,6 +41,9 @@ export default function WorkspacePage() {
   const [activeActionText, setActiveActionText] = useState<string>("Ready to analyze your event");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Error state for inline error display
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
+
   // Workflow State
   const [source, setSource] = useState<any>(null);
   const [sourceAnalysis, setSourceAnalysis] = useState<SourceAnalysisResult | null>(null);
@@ -88,6 +91,7 @@ export default function WorkspacePage() {
   const handleSourceUploaded = async (uploadedSource: any) => {
     setSource(uploadedSource);
     setIsProcessing(true);
+    setWorkflowError(null);
     setActiveActionText("Analyzing source with AI reasoning...");
 
     try {
@@ -106,7 +110,7 @@ export default function WorkspacePage() {
       setEventData(data.event);
       setActiveActionText("Analysis complete • Ready for review");
     } catch (err: any) {
-      alert("Error in analysis: " + err.message);
+      setWorkflowError("Analysis failed: " + err.message);
       setActiveActionText("Analysis failed");
     } finally {
       setIsProcessing(false);
@@ -120,6 +124,7 @@ export default function WorkspacePage() {
     customInstructions?: string
   ) => {
     setIsProcessing(true);
+    setWorkflowError(null);
     setActiveActionText(`Generating ${formType} form...`);
 
     try {
@@ -153,7 +158,7 @@ export default function WorkspacePage() {
       setCurrentStage("form");
       setActiveActionText("Form generated • Ready to refine");
     } catch (err: any) {
-      alert("Form generation error: " + err.message);
+      setWorkflowError("Form generation error: " + err.message);
       setActiveActionText("Form generation failed");
     } finally {
       setIsProcessing(false);
@@ -164,6 +169,7 @@ export default function WorkspacePage() {
   const handleModifyForm = async (instruction: string) => {
     if (!formData?.id) return;
     setIsModifyingForm(true);
+    setWorkflowError(null);
     setActiveActionText(`Applying: "${instruction.slice(0, 30)}..."`);
 
     try {
@@ -186,7 +192,7 @@ export default function WorkspacePage() {
       setLastNlExplanation(data.explanation);
       setActiveActionText("Form updated successfully");
     } catch (err: any) {
-      alert("Form modification error: " + err.message);
+      setWorkflowError("Form modification error: " + err.message);
     } finally {
       setIsModifyingForm(false);
     }
@@ -256,6 +262,7 @@ export default function WorkspacePage() {
   const handleSyncResponses = async () => {
     if (!formData?.id) return;
     setIsSyncingResponses(true);
+    setWorkflowError(null);
     setActiveActionText("Fetching live responses...");
 
     try {
@@ -277,7 +284,7 @@ export default function WorkspacePage() {
         handleAnalyzeResponses();
       }
     } catch (err: any) {
-      alert("Error syncing responses: " + err.message);
+      setWorkflowError("Error syncing responses: " + err.message);
     } finally {
       setIsSyncingResponses(false);
     }
@@ -287,6 +294,7 @@ export default function WorkspacePage() {
   const handleAnalyzeResponses = async () => {
     if (!formData?.id) return;
     setIsAnalyzingResponses(true);
+    setWorkflowError(null);
     setActiveActionText("Synthesizing response intelligence...");
 
     try {
@@ -303,7 +311,7 @@ export default function WorkspacePage() {
       setCurrentStage("insights");
       setActiveActionText("Analysis complete");
     } catch (err: any) {
-      alert("Error generating insights: " + err.message);
+      setWorkflowError("Error generating insights: " + err.message);
     } finally {
       setIsAnalyzingResponses(false);
     }
@@ -399,6 +407,23 @@ export default function WorkspacePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
           {/* System Status */}
           <AgentStatus googleConnected={googleStatus.connected} googleEmail={googleStatus.email} />
+
+          {/* Workflow Error Banner */}
+          {workflowError && (
+            <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-4 flex items-start gap-3 shadow-lg backdrop-blur-sm">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-200">{workflowError}</p>
+              </div>
+              <button
+                onClick={() => setWorkflowError(null)}
+                className="text-red-400 hover:text-red-300 transition-colors"
+                aria-label="Dismiss error"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Agent Trace */}
           <AgentTrace

@@ -30,14 +30,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/");
-    }, 600);
-  };
+  // Removed fake email/password login - use Google OAuth only
+  // The form below is for demo purposes and does not perform authentication
 
   return (
     <div className="fixed inset-0 z-50 bg-[#06080d] text-white overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row">
@@ -91,61 +85,16 @@ export default function LoginPage() {
           {/* Header */}
           <div className="space-y-2 text-center lg:text-left">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-              Welcome back
+              Welcome to EventPilot
             </h1>
             <p className="text-sm text-gray-600">
-              Log in to continue monitoring your events and forms.
+              Sign in with Google to access your event forms and analytics.
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-900 text-sm focus:outline-none focus:border-gray-500 transition-all placeholder:text-gray-400"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-gray-700">Password</label>
-                <a href="#" className="text-[11px] text-gray-500 hover:text-gray-700">
-                  Forgot password?
-                </a>
-              </div>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-900 text-sm focus:outline-none focus:border-gray-500 transition-all placeholder:text-gray-400"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-200 hover:bg-white text-slate-900 text-sm font-semibold rounded-xl transition-all cursor-pointer"
-            >
-              <span>{isLoading ? "Signing in..." : "Log in"}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative flex items-center justify-center my-4">
-            <div className="border-t border-gray-300 w-full" />
-            <span className="bg-[#f8f9fa] px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-              OR
-            </span>
-            <div className="border-t border-gray-300 w-full" />
+          {/* Demo Notice */}
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+            <strong>Demo:</strong> This app uses Google OAuth for authentication. Click "Sign in with Google" below to authorize access to Google Forms.
           </div>
 
           {/* Google Sign In */}
