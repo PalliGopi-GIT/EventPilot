@@ -8,6 +8,18 @@ import { rateLimit } from "@/lib/security/rateLimit";
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
+
+    // Verify User has connected Google Account before allowing analysis
+    if (!user.googleConnection) {
+      return NextResponse.json(
+        {
+          error: "Google account not connected. Please sign in with Google before analyzing sources.",
+          requireGoogleAuth: true,
+        },
+        { status: 401 }
+      );
+    }
+
     const rate = rateLimit(`analyze_${user.id}`, 15, 60000);
     if (!rate.success) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait." }, { status: 429 });

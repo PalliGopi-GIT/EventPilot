@@ -6,9 +6,10 @@ import { Upload, FileText, Image as ImageIcon, FileCode, AlertCircle, Loader2, A
 interface SourceUploaderProps {
   onSourceUploaded: (sourceData: any) => void;
   isLoading: boolean;
+  onRequireGoogleAuth?: () => void;
 }
 
-export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderProps) {
+export function SourceUploader({ onSourceUploaded, isLoading, onRequireGoogleAuth }: SourceUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -84,6 +85,10 @@ export function SourceUploader({ onSourceUploaded, isLoading }: SourceUploaderPr
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.requireGoogleAuth && onRequireGoogleAuth) {
+          onRequireGoogleAuth();
+          return;
+        }
         throw new Error(data.error || "Upload failed");
       }
 
