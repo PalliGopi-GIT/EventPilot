@@ -1,8 +1,8 @@
 import { prisma } from "../db/prisma";
 import { cookies } from "next/headers";
 
-const DEFAULT_USER_ID = "usr_pilot_main";
-const DEFAULT_USER_EMAIL = "organizer@eventpilot.ai";
+export const DEFAULT_USER_ID = "usr_pilot_main";
+export const DEFAULT_USER_EMAIL = "organizer@eventpilot.ai";
 
 /**
  * Gets or creates the current active user.

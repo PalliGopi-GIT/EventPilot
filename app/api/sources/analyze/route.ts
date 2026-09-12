@@ -9,16 +9,8 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
 
-    // Verify User has connected Google Account before allowing analysis
-    if (!user.googleConnection) {
-      return NextResponse.json(
-        {
-          error: "Google account not connected. Please sign in with Google before analyzing sources.",
-          requireGoogleAuth: true,
-        },
-        { status: 401 }
-      );
-    }
+    // Remove Google auth requirement for hackathon MVP
+    // Source analysis runs AI and doesn't need visitor's Google connection
 
     const rate = rateLimit(`analyze_${user.id}`, 15, 60000);
     if (!rate.success) {

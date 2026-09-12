@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { AgentTrace } from "@/components/agent/AgentTrace";
 import { AgentStatus } from "@/components/agent/AgentStatus";
@@ -12,20 +12,16 @@ import { ApprovalPanel } from "@/components/approval/ApprovalPanel";
 import { ResponseStats } from "@/components/insights/ResponseStats";
 import { Themes } from "@/components/insights/Themes";
 import { Recommendations } from "@/components/insights/Recommendations";
+import { SendFormEmail } from "@/components/email/SendFormEmail";
 import {
   Sparkles,
-  CheckCircle2,
   RefreshCw,
-  ExternalLink,
   Loader2,
   BarChart3,
   Users,
-  ArrowRight,
-  AlertCircle,
   Menu,
   X,
-  Lock,
-  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import type {
   SourceAnalysisResult,
@@ -55,12 +51,7 @@ export default function WorkspacePage() {
   const [lastNlExplanation, setLastNlExplanation] = useState<string | null>(null);
   const [isModifyingForm, setIsModifyingForm] = useState(false);
 
-  // Google Connection & Deployment State
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; email: string | null }>({
-    connected: false,
-    email: null,
-  });
+  // Deployment State (no Google auth gate needed for MVP)
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentResult, setDeploymentResult] = useState<{
     formUrl: string;
@@ -74,27 +65,6 @@ export default function WorkspacePage() {
   const [storedResponses, setStoredResponses] = useState<any[]>([]);
   const [analysisResult, setAnalysisResult] = useState<ResponseAnalysisResult | null>(null);
   const [isAnalyzingResponses, setIsAnalyzingResponses] = useState(false);
-
-  // Check auth status on mount
-  useEffect(() => {
-    setIsAuthLoading(true);
-    fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.googleConnection) {
-          setGoogleStatus({
-            connected: !!data.googleConnection.connected,
-            email: data.googleConnection.email,
-          });
-        }
-      })
-      .catch((err) => {
-        console.error("Auth status error:", err);
-      })
-      .finally(() => {
-        setIsAuthLoading(false);
-      });
-  }, []);
 
   // Handler: Source Uploaded -> Automatically trigger Agent 1 Source Analysis
   const handleSourceUploaded = async (uploadedSource: any) => {
@@ -112,10 +82,6 @@ export default function WorkspacePage() {
 
       const data = await res.json();
       if (!res.ok) {
-        if (data.requireGoogleAuth) {
-          setGoogleStatus((prev) => ({ ...prev, connected: false }));
-          return;
-        }
         throw new Error(data.error || "Analysis failed");
       }
 
@@ -128,12 +94,6 @@ export default function WorkspacePage() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  // Handler: Require Google Auth (from 401 responses)
-  const handleRequireGoogleAuth = () => {
-    setGoogleStatus((prev) => ({ ...prev, connected: false }));
-    setWorkflowError(null);
   };
 
   // Handler: Human Event Review Confirmed -> Generate Form via GLM
@@ -214,19 +174,6 @@ export default function WorkspacePage() {
       setWorkflowError("Form modification error: " + err.message);
     } finally {
       setIsModifyingForm(false);
-    }
-  };
-
-  // Handler: Start Google OAuth
-  const handleConnectGoogle = async () => {
-    try {
-      const res = await fetch("/api/auth/google");
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err) {
-      console.error("Failed to start Google OAuth:", err);
     }
   };
 
@@ -425,7 +372,7 @@ export default function WorkspacePage() {
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
           {/* System Status */}
-          <AgentStatus googleConnected={googleStatus.connected} googleEmail={googleStatus.email} />
+          <AgentStatus googleConnected={true} googleEmail="organizer@eventpilot.ai" />
 
           {/* Workflow Error Banner */}
           {workflowError && (
@@ -454,48 +401,10 @@ export default function WorkspacePage() {
 
           {/* Main Workflow */}
           <div className="space-y-6">
-            {/* Auth Loading State */}
-            {isAuthLoading && (
-              <div className="bg-slate-900/60 border border-slate-800/50 rounded-xl p-8 shadow-xl backdrop-blur-sm text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-4" />
-                <p className="text-sm text-slate-400">Checking authentication status...</p>
-              </div>
-            )}
-
-            {/* Google Auth Gated Screen */}
-            {!isAuthLoading && !googleStatus.connected && (
-              <div className="bg-slate-900/60 border border-slate-800/50 rounded-xl p-8 shadow-xl backdrop-blur-sm space-y-6">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Lock className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-100">
-                    Connect your Google account to start uploading event sources
-                  </h3>
-                  <p className="text-sm text-slate-400 max-w-md mx-auto">
-                    EventPilot requires Google authentication to upload and analyze event sources. Please sign in with your Google account to begin the event analysis workflow.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleConnectGoogle}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white/10 hover:bg-white/20 border border-slate-600/50 text-white rounded-lg shadow-md transition-all cursor-pointer"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  <span className="text-sm font-semibold">Sign in with Google</span>
-                </button>
-              </div>
-            )}
-
             {/* Step 1: Source Upload & Analysis */}
-            {googleStatus.connected && currentStage === "source" && (
+            {currentStage === "source" && (
               <div className="space-y-6">
-                <SourceUploader onSourceUploaded={handleSourceUploaded} isLoading={isProcessing} onRequireGoogleAuth={handleRequireGoogleAuth} />
+                <SourceUploader onSourceUploaded={handleSourceUploaded} isLoading={isProcessing} />
                 {sourceAnalysis && (
                   <SourceAnalysis analysis={sourceAnalysis} onProceedToReview={() => setCurrentStage("event")} />
                 )}
@@ -543,15 +452,25 @@ export default function WorkspacePage() {
                       requiresApproval: true,
                     }
                   }
-                  googleConnected={googleStatus.connected}
-                  googleEmail={googleStatus.email}
-                  onConnectGoogle={handleConnectGoogle}
+                  googleConnected={true}
+                  googleEmail="organizer@eventpilot.ai"
                   onApproveAndCreate={handleApproveAndDeploy}
                   onCancel={() => setCurrentStage("form")}
                   isDeploying={isDeploying}
                   deploymentResult={deploymentResult}
                   error={approvalError}
                 />
+
+                {/* Email Form to Recipients */}
+                {deploymentResult && (
+                  <div className="bg-slate-900/60 border border-slate-800/50 rounded-xl p-6 shadow-xl space-y-4 backdrop-blur-sm">
+                    <SendFormEmail
+                      formId={formData.id}
+                      responderUri={deploymentResult.responderUri}
+                      formTitle={formData.title}
+                    />
+                  </div>
+                )}
 
                 {/* Response Collection */}
                 {deploymentResult && (

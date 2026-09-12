@@ -49,6 +49,11 @@ export const GoogleResponsesFetchRequestSchema = z.object({
   formId: z.string().min(1),
 });
 
+export const FormSendEmailRequestSchema = z.object({
+  formId: z.string().min(1),
+  recipients: z.array(z.string().email()).min(1, "At least one valid recipient required"),
+});
+
 export const InsightsAnalyzeRequestSchema = z.object({
   formId: z.string().min(1),
 });

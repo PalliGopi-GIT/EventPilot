@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { getCurrentUser, recordAuditLog } from "@/lib/auth/session";
+import { getCurrentUser, recordAuditLog, DEFAULT_USER_ID } from "@/lib/auth/session";
 import { createRealGoogleForm } from "@/lib/google/forms";
 import { GoogleFormCreateRequestSchema } from "@/lib/validation/schemas";
 import type { FormDefinition } from "@/lib/ai/schemas";
@@ -10,7 +10,10 @@ export async function POST(req: NextRequest) {
   let requestId: string | undefined;
 
   try {
-    const user = await getCurrentUser();
+    // For MVP: Visitor owns the form record, but organizer's Google account creates the actual form
+    const visitor = await getCurrentUser(); // Gets visitor/user (default or cookie-based)
+    const organizerId = DEFAULT_USER_ID;    // Pre-connected organizer account
+
     const body = await req.json();
 
     const parsed = GoogleFormCreateRequestSchema.safeParse(body);
@@ -24,12 +27,12 @@ export async function POST(req: NextRequest) {
     formId = parsed.data.formId;
     requestId = parsed.data.requestId;
 
-    // Fetch form and check authorization
+    // Fetch form and check authorization (visitor owns the form record)
     const form = await prisma.form.findUnique({
       where: { id: formId },
     });
 
-    if (!form || form.userId !== user.id) {
+    if (!form || form.userId !== visitor.id) {
       return NextResponse.json({ error: "Form not found or unauthorized" }, { status: 404 });
     }
 
@@ -67,14 +70,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify User has connected Google Account
-    if (!user.googleConnection) {
+    // Verify Organizer has connected Google Account (using pre-connected account)
+    const organizer = await prisma.user.findUnique({
+      where: { id: organizerId },
+      include: { googleConnection: true },
+    });
+
+    if (!organizer || !organizer.googleConnection) {
       return NextResponse.json(
         {
-          error: "Google account not connected. Please connect your Google account to create forms.",
+          error: "Organizer Google account not connected. Please configure the organizer's Google connection.",
           requireGoogleAuth: true,
         },
-        { status: 401 }
+        { status: 500 }
       );
     }
 
@@ -85,7 +93,7 @@ export async function POST(req: NextRequest) {
       create: {
         key: requestId,
         action: "CREATE_GOOGLE_FORM",
-        userId: user.id,
+        userId: visitor.id, // Still track against visitor for idempotency
         status: "IN_PROGRESS",
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
@@ -106,8 +114,8 @@ export async function POST(req: NextRequest) {
       questions,
     };
 
-    // Execute Real Google Form Creation
-    const result = await createRealGoogleForm(user.id, formDef);
+    // Execute Real Google Form Creation using organizer's Google account
+    const result = await createRealGoogleForm(organizerId, formDef);
 
     // Update database Form record
     await prisma.form.update({
@@ -138,7 +146,7 @@ export async function POST(req: NextRequest) {
     });
 
     await recordAuditLog({
-      userId: user.id,
+      userId: visitor.id,
       action: "GOOGLE_FORM_CREATE",
       resourceType: "form",
       resourceId: form.id,

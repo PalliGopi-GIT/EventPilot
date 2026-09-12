@@ -7,12 +7,10 @@ import {
   CheckCircle2,
   Lock,
   Globe,
-  UserCheck,
   FileCheck,
   Loader2,
   ExternalLink,
   AlertCircle,
-  KeyRound,
 } from "lucide-react";
 import type { FormDefinition, ActionPlan } from "@/lib/ai/schemas";
 
@@ -21,7 +19,6 @@ interface ApprovalPanelProps {
   actionPlan: ActionPlan;
   googleConnected: boolean;
   googleEmail?: string | null;
-  onConnectGoogle: () => void;
   onApproveAndCreate: (requestId: string) => Promise<void>;
   onCancel: () => void;
   isDeploying: boolean;
@@ -38,7 +35,6 @@ export function ApprovalPanel({
   actionPlan,
   googleConnected,
   googleEmail,
-  onConnectGoogle,
   onApproveAndCreate,
   onCancel,
   isDeploying,
@@ -148,34 +144,17 @@ export function ApprovalPanel({
               <span className="font-semibold text-slate-400 uppercase tracking-wider">EXTERNAL SERVICE</span>
               <span className="col-span-2 text-slate-200 flex items-center gap-1.5">
                 <Globe className="w-4 h-4 text-emerald-400" />
-                Google Forms API v1 (via user-delegated OAuth token)
+                Google Forms API v1 (via organizer's OAuth token)
               </span>
             </div>
 
             <div className="grid grid-cols-3 p-3.5 text-xs">
               <span className="font-semibold text-slate-400 uppercase tracking-wider">TARGET ACCOUNT</span>
               <div className="col-span-2 flex items-center justify-between">
-                {googleConnected ? (
-                  <span className="font-mono text-emerald-400 flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4" />
-                    {googleEmail}
-                  </span>
-                ) : (
-                  <span className="text-amber-400 font-mono flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" />
-                    OAuth Connection Required
-                  </span>
-                )}
-
-                {!googleConnected && (
-                  <button
-                    type="button"
-                    onClick={onConnectGoogle}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded shadow-sm transition-all cursor-pointer"
-                  >
-                    Connect Google Account
-                  </button>
-                )}
+                <span className="text-slate-400 font-mono flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  Google Account via organizer
+                </span>
               </div>
             </div>
           </div>
@@ -215,7 +194,7 @@ export function ApprovalPanel({
 
             <button
               type="button"
-              disabled={isDeploying || !googleConnected || !hasConfirmed}
+              disabled={isDeploying || !hasConfirmed}
               onClick={handleApprove}
               className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
             >
@@ -227,7 +206,7 @@ export function ApprovalPanel({
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Approve & Deploy to Google Forms</span>
+                  <span>Approve & Create Form</span>
                 </>
               )}
             </button>

@@ -273,7 +273,7 @@ npx prisma migrate deploy
 
 ---
 
-## Hackathon Demo Flow
+## Hackathon Demo Flow (Simplified MVP)
 
 ### Real End-to-End Demo
 
@@ -285,8 +285,8 @@ npx prisma migrate deploy
 6. **NL Edit**: Type "Add a question about next workshop topics"
 7. **GLM Applies Change**: Preserves existing questions, adds new one
 8. **Review Action Plan**: Agent 2 creates deterministic PLAN (no external calls yet)
-9. **Connect Google Account**: OAuth 2.0 login to organizer@demo.com
-10. **Approve & Deploy**: First and only time Google Forms API is called
+9. **Approve & Deploy**: Automatically creates Google Form using pre-connected organizer account
+10. **Send Form via Email**: Enter recipient emails to send form link via email (Resend)
 11. **Real Form URL**: `https://docs.google.com/forms/d/e/.../viewform`
 12. **10-20 Participants Submit**: Real Google Form responses
 13. **Sync Responses**: Google Forms Responses API called → synced to PostgreSQL

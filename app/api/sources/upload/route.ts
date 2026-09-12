@@ -8,16 +8,9 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
 
-    // Verify User has connected Google Account before allowing upload
-    if (!user.googleConnection) {
-      return NextResponse.json(
-        {
-          error: "Google account not connected. Please sign in with Google before uploading.",
-          requireGoogleAuth: true,
-        },
-        { status: 401 }
-      );
-    }
+    // Remove Google auth requirement for hackathon MVP
+    // Form creation uses the organizer's pre-connected Google account
+    // Users can upload and generate forms without connecting their own Google account
 
     const rate = rateLimit(`upload_${user.id}`, 20, 60000);
     if (!rate.success) {
