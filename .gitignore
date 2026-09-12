@@ -47,3 +47,5 @@ Thumbs.db
 coverage/
 
 .claude/worktrees/
+.vercel
+.env*
